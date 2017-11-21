@@ -36,13 +36,14 @@
 #### step 3.3: Sort the data by date
 #### step 3.4: Check for NA Values
 #### step 3.5: Convert sales data to time series 
-#### step 3.6: Create Data Frame with Sales Time Series and predictor variables
+#### step 3.6: Stationarity in Time series
+#### step 3.7: Check for Outliers in sales
+#### step 3.8: Create Data Frame with Sales Time Series and predictor variables
 ## step 4: Data Visualization
 #### step 4.1: TimeSeries Plot
 #### step 4.2: TimeSeries Plot(splitted)
 #### step 4.3: Decomposition of Timeseries
-#### step 4.4: Trend of Sales for each weekday using Box Plot
-#### step 4.5: Trend of Sales for each weekday using Month Plot
+#### step 4.4: Trend of Sales for each weekday using Month Plot
 ## step 5: Correlation between Predictors and response variable
 #### step 5.1: Correlation Matrix
 #### step 5.2: Scatterplot between response variable and potential predictors
@@ -77,7 +78,7 @@ raw_data <- read.csv(file.choose(),header=TRUE)
 
 #### step 3.1: Filter Store No.7 data
 raw_data_7 <- filter(raw_data,Store==7)
-str(raw_data)
+str(raw_data_7)
 
 
 #### step 3.2: Correct the data type of columns
@@ -104,12 +105,29 @@ if(anyNA(raw_data_7)){
 }
 
 
-#### step 3.5: Convert data to time series with predictor variables
+#### step 3.5: Convert data to time series
 sales_ts <- ts(raw_data_7$Sales,start=c(1,2),frequency=7)
 head(sales_ts)
 
 
-#### step 3.6: Create Data Frame with Sales Time Series and predictor variables
+#### step 3.6: Stationarity in Time series
+par(las=1)
+ts.plot(sales_ts,xlab='Week Number',ylab='Sales',
+        main='Stationarity of Time Series')
+points(cummean(sales_ts)~time(sales_ts),col='red',lwd=0.5)
+legend(80,19000,bty='n',col='red',lwd=2,legend='Mean Line')
+
+#### step 3.7: Check for Outliers in sales
+boxplot(sales_ts~cycle(sales_ts),
+        col=2:8,
+        xlab='Week Day',
+        ylab='sales',
+        main='Trend of Sales for each day of the week',
+        las=1)
+legend(6.3,19000,legend=weekdays(as.Date('2017-11-19')+1:7),col=2:8,lwd=3,cex=0.8,bty='n')
+
+
+#### step 3.8: Create Data Frame with Sales Time Series and predictor variables
 ross=data.frame(sales_ts=sales_ts,
                 DayOfWeek=raw_data_7$DayOfWeek,
                 Customers=raw_data_7$Customers,
@@ -141,17 +159,7 @@ par(mfrow = c(1,1))
 plot(decompose(sales_ts))
 
 
-#### step 4.4: Trend of Sales for each weekday using Box Plot
-boxplot(sales_ts~cycle(sales_ts),
-        col=2:8,
-        xlab='Week Day',
-        ylab='sales',
-        main='Trend of Sales for each day of the week',
-        las=1)
-legend(6.3,19000,legend=weekdays(as.Date('2017-11-19')+1:7),col=2:8,lwd=3,cex=0.8,bty='n')
-
-
-#### step 4.5: Trend of Sales for each weekday using Month Plot
+#### step 4.4: Trend of Sales for each weekday using Month Plot
 monthplot(ross$sales_ts,
           las=1,
           main = 'Trend for each day of the week',
@@ -200,12 +208,12 @@ if(nrow(test_data)==0) {
 ## step 7: Model Fitting
 
 #### step 7.1: Model 1 - with transformed predictors
-ross_model <- tslm(I(sqrt(train_tsales))~I(sqrt(Customers))+Promo,data=train_data)
+ross_model <- tslm(I(sqrt(train_tsales))~trend+I(sqrt(Customers))+Promo,data=train_data)
 summary(ross_model)
 
 
 #### step 7.2: Model 2 - with untransformed predictors
-ross_model_comp <- tslm(train_tsales~Customers+Promo,data=train_data)
+ross_model_comp <- tslm(train_tsales~trend+Customers+Promo,data=train_data)
 summary(ross_model_comp)
 
 
@@ -266,8 +274,9 @@ abline(h=0,lwd=2,col='red')
 prediction <- forecast(ross_model,newdata=test_data)
 predict_signs <- sign(data.frame(prediction))
 predicted_vals <- data.frame(round(data.frame(prediction)^2,4)*predict_signs)
-predicted_data <- data.frame(Forecasted_Sales = predicted_vals[,1] ,Actual_Sales = test_tsales,test_data)
-print(predicted_data)
+predicted_data <- data.frame(Forecasted_Sales = predicted_vals[,1] ,
+                             Actual_Sales = test_tsales,test_data)
+head(predicted_data)
 
 #### step 10.2: Plot of predicted values
 par(mfrow=c(1,1))
