@@ -9,3 +9,5 @@ As data scientists, it is imperative to crunch real time data and apply statisti
 The aim of this project is to predict the sales of one of the stores in the Rossmann group to help them plan and improve revenue growth. The store for which sales to be predicted is store number 7.
 
 https://www.kaggle.com/c/rossmann-store-sales
+
+# Algorithm Used: Time Series Linear Regression
